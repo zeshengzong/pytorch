@@ -42,6 +42,10 @@ struct TORCH_API XPUHooksInterface : AcceleratorHooksInterface{
     TORCH_CHECK(false, "Cannot get default XPU generator without ATen_xpu library.");
   }
 
+  virtual const Generator& getDefaultGenerator(const DeviceIndex device_index = -1) const override {
+    return getDefaultXPUGenerator(device_index);
+  }
+
   virtual DeviceIndex getNumGPUs() const {
     return 0;
   }

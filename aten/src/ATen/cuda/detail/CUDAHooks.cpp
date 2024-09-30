@@ -117,6 +117,10 @@ const Generator& CUDAHooks::getDefaultCUDAGenerator(DeviceIndex device_index) co
   return at::cuda::detail::getDefaultCUDAGenerator(device_index);
 }
 
+const Generator& CUDAHooks::getDefaultGenerator(DeviceIndex device_index) const {
+  return getDefaultCUDAGenerator(device_index);
+}
+
 Device CUDAHooks::getDeviceFromPtr(void* data) const {
   return at::cuda::getDeviceFromPtr(data);
 }
