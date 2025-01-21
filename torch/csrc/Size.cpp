@@ -225,10 +225,26 @@ static PyObject* THPSize_reduce(PyObject* _self, PyObject* noargs) {
   END_HANDLE_TH_ERRORS
 }
 
+static PyObject* THPSize_radd(PyObject* self, PyObject* other) {
+  HANDLE_TH_ERRORS
+  if (!PyTuple_Check(other)) {
+    PyErr_SetString(PyExc_TypeError, "Can only concatenate tuple (not \"other type\") to tuple");
+    return nullptr;
+  }
+  PyObject* result = PySequence_Concat(other, self);
+  if (!result) {
+    throw python_error();
+  }
+  // return THPSize_NewFromSizes(PyTuple_Size((PyObject*)result), result);
+  return result;
+  END_HANDLE_TH_ERRORS
+}
+
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,modernize-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays)
 static PyMethodDef THPSize_methods[] = {
     {"numel", THPSize_numel, METH_NOARGS, nullptr},
     {"__reduce__", THPSize_reduce, METH_NOARGS, nullptr},
+    {"__radd__", THPSize_radd, METH_VARARGS, nullptr},
     {nullptr}};
 
 PyTypeObject THPSizeType = {
