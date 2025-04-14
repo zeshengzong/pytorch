@@ -1,11 +1,14 @@
 # mypy: allow-untyped-defs
 # Copyright (c) Meta Platforms, Inc. and affiliates
 
+from __future__ import annotations
+
 import warnings
-from typing import Any
+from typing import Any, Union
 from typing_extensions import TypeIs
 
 import torch
+from torch import Tensor
 from torch.overrides import get_default_nowrap_functions
 
 
@@ -15,7 +18,7 @@ __all__ = [
 ]
 
 
-def is_masked_tensor(obj: Any, /) -> TypeIs["MaskedTensor"]:
+def is_masked_tensor(obj: Any, /) -> TypeIs[MaskedTensor]:
     r"""Returns True if the input is a MaskedTensor, else False
 
     Args:
@@ -59,7 +62,7 @@ def _tensors_match(a, b, exact=True, rtol=1e-05, atol=1e-08):
     return (a.dim() == b.dim()) and torch.allclose(a, b, rtol=rtol, atol=atol)
 
 
-def _masks_match(a, b):
+def _masks_match(a: Tensor, b: Tensor) -> bool:
     if is_masked_tensor(a) and is_masked_tensor(b):
         mask_a = a.get_mask()
         mask_b = b.get_mask()
@@ -104,7 +107,7 @@ def _wrap_result(result_data, result_mask):
     return NotImplemented
 
 
-def _masked_tensor_str(data, mask, formatter):
+def _masked_tensor_str(data: Tensor, mask: Tensor, formatter: str) -> str:
     if data.layout in {torch.sparse_coo, torch.sparse_csr}:
         data = data.to_dense()
         mask = mask.to_dense()
@@ -129,21 +132,21 @@ def _masked_tensor_str(data, mask, formatter):
     return "[\n" + ",\n".join(sub_strings) + "\n]"
 
 
-def _get_data(a):
+def _get_data(a: Tensor) -> Tensor:
     if is_masked_tensor(a):
         return a._masked_data
     return a
 
 
-def _maybe_get_mask(a):
+def _maybe_get_mask(a: Tensor) -> Union[Tensor, None]:
     if is_masked_tensor(a):
         return a.get_mask()
     return None
 
 
-class MaskedTensor(torch.Tensor):
+class MaskedTensor(Tensor):
     @staticmethod
-    def __new__(cls, data, mask, requires_grad=False):
+    def __new__(cls, data: Tensor, mask: Tensor, requires_grad: bool = False):
         if is_masked_tensor(data) or not torch.is_tensor(data):
             raise TypeError("data must be a Tensor")
         if is_masked_tensor(mask) or not torch.is_tensor(mask):
@@ -176,7 +179,7 @@ class MaskedTensor(torch.Tensor):
             )
         return torch.Tensor._make_wrapper_subclass(cls, data.size(), **kwargs)  # type: ignore[attr-defined]
 
-    def _preprocess_data(self, data, mask):
+    def _preprocess_data(self, data: Tensor, mask: Tensor) -> None:
         from .._ops import _sparse_coo_where, _sparse_csr_where
 
         if data.layout != mask.layout:
@@ -194,7 +197,7 @@ class MaskedTensor(torch.Tensor):
         self._masked_data = data.clone()
         self._masked_mask = mask.clone()
 
-    def _validate_members(self):
+    def _validate_members(self) -> None:
         data = self._masked_data
         mask = self.get_mask()
         if type(data) != type(mask):
@@ -233,12 +236,12 @@ class MaskedTensor(torch.Tensor):
         if data.size() != mask.size():
             raise ValueError("data.size() must equal mask.size()")
 
-    def __init__(self, data, mask, requires_grad=False):
+    def __init__(self, data: Tensor, mask: Tensor, requires_grad: bool = False) -> None:
         self._preprocess_data(data, mask)
         self._validate_members()
 
     @staticmethod
-    def _from_values(data, mask):
+    def _from_values(data: Tensor, mask: Tensor) -> MaskedTensor:
         """Differentiable constructor for MaskedTensor"""
 
         class Constructor(torch.autograd.Function):
@@ -253,12 +256,12 @@ class MaskedTensor(torch.Tensor):
         result = Constructor.apply(data, mask)
         return result
 
-    def _set_data_mask(self, data, mask):
+    def _set_data_mask(self, data: Tensor, mask: Tensor) -> None:
         self._masked_data = data
         self._masked_mask = mask
         self._validate_members()
 
-    def __repr__(self):  # type: ignore[override]
+    def __repr__(self) -> str:  # type: ignore[override]
         formatter = "{0:8.4f}"
         if self.dim() == 0:
             scalar_data = self.get_data().item()
@@ -300,7 +303,7 @@ class MaskedTensor(torch.Tensor):
                 return torch._tensor._convert(ret, cls)
 
     @classmethod
-    def unary(cls, fn, data, mask):
+    def unary(cls, fn, data: Tensor, mask: Tensor) -> MaskedTensor:
         return MaskedTensor(fn(data), mask)
 
     @classmethod
@@ -322,15 +325,15 @@ class MaskedTensor(torch.Tensor):
         warnings.warn(msg)
         return NotImplemented
 
-    def __lt__(self, other):
+    def __lt__(self, other: Tensor) -> MaskedTensor:  # type: ignore[override]
         if is_masked_tensor(other):
             return MaskedTensor(self.get_data() < _get_data(other), self.get_mask())
         return MaskedTensor(self.get_data() < other, self.get_mask())
 
-    def to_tensor(self, value):
+    def to_tensor(self, value: float) -> Tensor:
         return self.get_data().masked_fill(~self.get_mask(), value)
 
-    def get_data(self):
+    def get_data(self) -> Tensor:
         class GetData(torch.autograd.Function):
             @staticmethod
             def forward(ctx, self):
@@ -344,16 +347,16 @@ class MaskedTensor(torch.Tensor):
 
         return GetData.apply(self)
 
-    def get_mask(self):
+    def get_mask(self) -> Tensor:
         return self._masked_mask
 
-    def is_sparse_coo(self):
+    def is_sparse_coo(self) -> bool:
         return self.layout == torch.sparse_coo
 
-    def is_sparse_csr(self):  # type: ignore[override]
+    def is_sparse_csr(self) -> bool:  # type: ignore[override]
         return self.layout == torch.sparse_csr
 
     # Update later to support more sparse layouts
     @property
-    def is_sparse(self):
+    def is_sparse(self) -> bool:  # type: ignore[override]
         return self.is_sparse_coo() or self.is_sparse_csr()
