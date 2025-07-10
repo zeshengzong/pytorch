@@ -4734,6 +4734,12 @@
     CompositeExplicitAutograd: rand_like
   autogen: rand_like.out
 
+- func: rand_like.generator(Tensor self, *, Generator? generator, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None, MemoryFormat? memory_format=None) -> Tensor
+  tags: nondeterministic_seeded
+  dispatch:
+    CompositeExplicitAutograd: rand_like
+  autogen: rand_like.generator_out
+
 - func: randint(SymInt high, SymInt[] size, *, ScalarType? dtype=long, Layout? layout=None, Device? device=None, bool? pin_memory=None) -> Tensor
   tags: nondeterministic_seeded
   dispatch:
@@ -4837,6 +4843,12 @@
     # non-differentiable so NonFunctional doesn't apply
     CompositeExplicitAutograd, CompositeImplicitAutogradNestedTensor: randn_like
   autogen: randn_like.out
+
+- func: randn_like.generator(Tensor self, *, Generator? generator, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None, MemoryFormat? memory_format=None) -> Tensor
+  tags: nondeterministic_seeded
+  dispatch:
+    CompositeExplicitAutograd, CompositeImplicitAutogradNestedTensor: randn_like
+  autogen: randn_like.generator_out
 
 - func: randperm(SymInt n, *, ScalarType? dtype=long, Layout? layout=None, Device? device=None, bool? pin_memory=None) -> Tensor
   tags: [core, nondeterministic_seeded]

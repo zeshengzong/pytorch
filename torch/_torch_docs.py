@@ -166,6 +166,7 @@ factory_like_common_args = parse_kwargs(
         the pinned memory. Works only for CPU tensors. Default: ``False``.
     memory_format (:class:`torch.memory_format`, optional): the desired memory format of
         returned Tensor. Default: ``torch.preserve_format``.
+    generator (:class:`torch.Generator`, optional): a pseudorandom number generator for sampling.
 """
 )
 
@@ -8903,7 +8904,7 @@ Example::
 add_docstr(
     torch.rand_like,
     r"""
-rand_like(input, *, dtype=None, layout=None, device=None, requires_grad=False, memory_format=torch.preserve_format) -> Tensor
+rand_like(input, *, generator=None, dtype=None, layout=None, device=None, requires_grad=False, memory_format=torch.preserve_format) -> Tensor # noqa: B950
 
 Returns a tensor with the same size as :attr:`input` that is filled with
 random numbers from a uniform distribution on the interval :math:`[0, 1)`.
@@ -8914,6 +8915,7 @@ Args:
     {input}
 
 Keyword args:
+    {generator}
     {dtype}
     {layout}
     {device}
@@ -9059,7 +9061,7 @@ Example::
 add_docstr(
     torch.randn_like,
     r"""
-randn_like(input, *, dtype=None, layout=None, device=None, requires_grad=False, memory_format=torch.preserve_format) -> Tensor
+randn_like(input, *, generator=None, dtype=None, layout=None, device=None, requires_grad=False, memory_format=torch.preserve_format) -> Tensor # noqa: B950
 
 Returns a tensor with the same size as :attr:`input` that is filled with
 random numbers from a normal distribution with mean 0 and variance 1. Please refer to :func:`torch.randn` for the
@@ -9070,6 +9072,7 @@ Args:
     {input}
 
 Keyword args:
+    {generator}
     {dtype}
     {layout}
     {device}

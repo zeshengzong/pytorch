@@ -6566,6 +6566,25 @@ else:
         actual = t_non_contig.masked_scatter_(mask_contig, source)
         self.assertEqual(actual, expected)
 
+    def test_rand_like(self, device):
+        gen = torch.Generator(device)
+        gen.manual_seed(1)
+        a = torch.rand_like(torch.zeros([2, 3], device=device), generator=gen)
+
+        gen = torch.Generator(device)
+        gen.manual_seed(1)
+        b = torch.rand_like(torch.zeros([2, 3], device=device), generator=gen)
+        self.assertEqual(a, b)
+
+    def test_randn_like(self, device):
+        gen = torch.Generator(device)
+        gen.manual_seed(1)
+        a = torch.randn_like(torch.zeros([2, 3], device=device), generator=gen)
+
+        gen = torch.Generator(device)
+        gen.manual_seed(1)
+        b = torch.randn_like(torch.zeros([2, 3], device=device), generator=gen)
+        self.assertEqual(a, b)
 
 # Tests that compare a device's computation with the (gold-standard) CPU's.
 class TestDevicePrecision(TestCase):
